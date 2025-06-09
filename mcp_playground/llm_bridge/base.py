@@ -232,3 +232,47 @@ class LLMBridge(abc.ABC):
         # Get LLM's final response (without tools this time)
         final_response = await self.submit_query_without_tools(messages)
         return final_response
+    
+    async def process_messages(self, messages: List[Dict[str, str]]) -> Dict[str, Any]:
+        """Process a user query through the LLM and execute any tool calls.
+        
+        This method handles the full flow:
+        1. Fetch tools if not already fetched
+        2. Format tools for the LLM
+        3. Submit query to LLM
+        4. Parse tool calls from LLM response
+        5. Execute tool if needed
+        
+        Args:
+            query: User query string
+            
+        Returns:
+            Dictionary containing the LLM response, tool call, and tool result
+        """
+        # 1. Fetch tools if not already fetched
+        if self.tools is None:
+            await self.fetch_tools()
+        
+        # 2. Format tools for the LLM
+        formatted_tools = await self.format_tools(self.tools)
+        
+        # 3. Submit query to LLM
+        llm_response = await self.submit_messages(messages, formatted_tools)
+        
+        # 4. Parse tool calls from LLM response
+        tool_call = await self.parse_tool_call(llm_response)
+        
+        result = {
+            "llm_response": llm_response,
+            "tool_call": tool_call,
+            "tool_result": None
+        }
+        
+        # 5. Execute tool if needed
+        if tool_call:
+            tool_name = tool_call.get("name")
+            kwargs = tool_call.get("parameters", {})
+            tool_result = await self.execute_tool(tool_name, kwargs)
+            result["tool_result"] = tool_result
+        
+        return result

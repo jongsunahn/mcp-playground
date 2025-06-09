@@ -739,7 +739,7 @@ async def process_user_message_async(user_input):
             return "❌ No LLM bridge configured. Please configure an API key and connect to MCP server."
         
         try:
-            result = await st.session_state.llm_bridge.process_query(user_input, st.session_state.messages)
+            result = await st.session_state.llm_bridge.process_messages(st.session_state.messages)
             
             # Handle enhanced response structure for tools mode
             if isinstance(result, dict):
@@ -809,7 +809,7 @@ async def process_user_message_async(user_input):
                 # Only show this info in debug mode, not always
                 # st.info(f"🔧 Auto mode: {tools_count} MCP tools available for LLM to use")
             
-            result = await st.session_state.llm_bridge.process_query(user_input, st.session_state.messages)
+            result = await st.session_state.llm_bridge.process_messages(st.session_state.messages)
             
             # Handle enhanced response structure
             if isinstance(result, dict):
